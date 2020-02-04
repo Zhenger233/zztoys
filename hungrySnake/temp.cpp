@@ -27,6 +27,7 @@ kind,coordinate
 */
 map<int,vector<point> >food;
 /*
+-1:bbooddyy
 0:nothing
 1:body
 2:food
@@ -36,13 +37,13 @@ map<point,int>mmp;
 vector<point>spacemp;
 /*
 1:up
-2:down
-3:left
+2:left
+3:down
 4:right
 */
 int direction;
 //flag=0,work
-int selfCrackFlag=0,wallCrackFlag=1;
+int selfCrackFlag=1,wallCrackFlag=1;
 /*
 0:1-2
 1:x-2
@@ -58,6 +59,7 @@ int foodFlag;
 4:restart
 */
 int errorFlag=4;
+int sleepTime=500;
 vector<string>errorInfo;
 long long gameTime=0;
 //length of snake
@@ -72,6 +74,7 @@ void show();
 void grow();
 void move();
 void eat();
+void hide();
 point nextpoint(point);
 bool outOfMap(point);
 
@@ -81,6 +84,7 @@ int main()
     gameInit();
     while(1){
 		if(errorFlag==0)break;
+		Sleep(sleepTime);
 		tempstate=keyscan();
 		work(tempstate);
 	}
@@ -93,12 +97,15 @@ void gameInit()
 {
     char c,i,j;
     srand(time(0));
+	hide();
+	system("mode con cols=16 lines=12");
 	errorInfo.clear();
 	errorInfo.push_back("quit.\n");
-	errorInfo.push_back("self.\n");
-	errorInfo.push_back("wall.\n");
+	errorInfo.push_back("Self Crack.\n");
+	errorInfo.push_back("Wall Crack.\n");
 	errorInfo.push_back("poison.\n");
 	errorInfo.push_back("restart.\n");
+	errorInfo.push_back("Too long to live!.\n");
 	memset(mp,0,sizeof(mp));
 	mmp.clear();
 	snake.clear();
@@ -112,10 +119,13 @@ void gameInit()
 	int tempx=length/2,tempy=width/2;
 	mp[tempx][tempy]=1;
     snake.push_back({tempx,tempy});
-    cout<<"push space to begin:\n";
+    cout<<"Push\nW/A/S/D\nto\nstart\n....\n";
     while(1){
         c=_getch();
-        if(c==' ')break;
+        if(c=='w'){direction=1;break;}
+        if(c=='a'){direction=2;break;}
+        if(c=='s'){direction=3;break;}
+        if(c=='d'){direction=4;break;}
     }
 	cook();
     show();
@@ -125,32 +135,34 @@ void show()
 {
 	int i,j;
 	system("cls");
-	printf("time:%lld  length:%lld\n",gameTime,l);
     memset(mp,0,sizeof(mp));
 	mmp.clear();
     for(auto p:snake){
-        mp[p.x][p.y]=1;
-		mmp[p]=1;
+        if(mp[p.x][p.y]==0){mp[p.x][p.y]=1;mmp[p]=1;}
+		else if(mp[p.x][p.y]==1){mp[p.x][p.y]=-1;mmp[p]=-1;}
     }
 	for(int i=2;i<=foodKind;i++)if(!food[i].empty())for(auto j:food[i]){
 		mmp[j]=i;
 		mp[j.x][j.y]=i;
 	}
-	
 	for(i=0;i<length;i++){
 		for(j=0;j<width;j++){
 			switch(mp[i][j])
 			{
-				case 0:_putch('`');spacemp.push_back({i,j});break;
-				case 1:_putch('*');break;
-				case 2:_putch('#');break;
+				case -1:printf("\033[31m*\033[0m");break;
+				case 0:_putch(' ');break;
+				case 1:printf("\033[32m*\033[0m");break;
+				case 2:printf("\033[34m#\033[0m");break;
 			}
 		}
 		_putch('\n');
 	}
+	printf("Timetick:%lld\nScore:%lld\nTimescale:%d",gameTime,l,sleepTime);
 }
 
 int keyscan(){
+	int n=1;
+	/*
 	char c=_getch();
 	switch(c)
 	{
@@ -162,12 +174,25 @@ int keyscan(){
 		case 'e':return 6;//length++
 		case 'q':return 7;
 	}
-	return 0;
+	*/
+	if(GetAsyncKeyState('W')||GetAsyncKeyState(VK_UP))n=2;
+	if(GetAsyncKeyState('A')||GetAsyncKeyState(VK_LEFT))n=3;
+	if(GetAsyncKeyState('S')||GetAsyncKeyState(VK_DOWN))n=4;
+	if(GetAsyncKeyState('D')||GetAsyncKeyState(VK_RIGHT))n=5;
+	if(GetAsyncKeyState('E'))n=6;
+	if(GetAsyncKeyState('Q'))n=7;
+	return n;
 }
 
 void cook()
 {
-	int tempx,tempy,tempn,tempnn;
+	int i,j,tempx,tempy,tempn,tempnn;
+	spacemp.clear();
+	for(i=0;i<length;i++){
+		for(j=0;j<width;j++){
+			if(mp[i][j]==0)spacemp.push_back({i,j});
+		}
+	}
 	tempn=spacemp.size();
 	tempnn=rand()%tempn;
 	tempx=spacemp[tempnn].x;
@@ -179,10 +204,10 @@ void cook()
 void work(int s){
 	switch(s){
 		case 1:gameTime++;move();show();break;
-		case 2:direction=1;show();break;
-		case 3:direction=2;show();break;
-		case 4:direction=3;show();break;
-		case 5:direction=4;show();break;
+		case 2:if(direction!=3)direction=1;show();break;
+		case 3:if(direction!=4)direction=2;show();break;
+		case 4:if(direction!=3)direction=3;show();break;
+		case 5:if(direction!=2)direction=4;show();break;
 		case 6:grow();show();break;
 		case 7:errorFlag=0;gameQuit();break;
 	}
@@ -230,6 +255,13 @@ void grow()
     point tempp=snake.front();
 	snake.push_front(nextpoint(tempp));
 	l++;
+	if(l==255){
+		errorFlag=5;
+		gameQuit();
+	}
+	if(sleepTime>=200)sleepTime-=20;
+	else sleepTime-=10;
+	if(sleepTime<=100)sleepTime=500;
 }
 
 point nextpoint(point p)
@@ -249,4 +281,13 @@ bool outOfMap(point p)
 		(direction==3&&p.x==length-1)||
 		(direction==2&&p.y==0)||
 		(direction==4&&p.y==width-1);
+}
+
+void hide()
+{
+HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
+CONSOLE_CURSOR_INFO cci;
+GetConsoleCursorInfo(hOut, &cci);
+cci.bVisible = FALSE;
+SetConsoleCursorInfo(hOut, &cci);
 }
