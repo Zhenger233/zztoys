@@ -137,19 +137,20 @@ void show()
 	system("cls");
     memset(mp,0,sizeof(mp));
 	mmp.clear();
-    for(auto p:snake){
+    for(auto &p:snake){
         if(mp[p.x][p.y]==0){mp[p.x][p.y]=1;mmp[p]=1;}
 		else if(mp[p.x][p.y]==1){mp[p.x][p.y]=-1;mmp[p]=-1;}
     }
+	auto &p=snake.front();mp[p.x][p.y]=-2;mmp[p]=-2;
 	for(int i=2;i<=foodKind;i++)if(!food[i].empty())for(auto j:food[i]){
 		mmp[j]=i;
 		mp[j.x][j.y]=i;
 	}
 	for(i=0;i<length;i++){
 		for(j=0;j<width;j++){
-			switch(mp[i][j])
-			{
+			switch(mp[i][j]){
 				case -1:printf("\033[31m*\033[0m");break;
+				case -2:printf("\033[36m*\033[0m");break;
 				case 0:_putch(' ');break;
 				case 1:printf("\033[32m*\033[0m");break;
 				case 2:printf("\033[34m#\033[0m");break;
@@ -181,6 +182,8 @@ int keyscan(){
 	if(GetAsyncKeyState('D')||GetAsyncKeyState(VK_RIGHT))n=5;
 	if(GetAsyncKeyState('E'))n=6;
 	if(GetAsyncKeyState('Q'))n=7;
+	if(GetAsyncKeyState('1'))n=8;
+	if(GetAsyncKeyState('2'))n=9;
 	return n;
 }
 
@@ -210,6 +213,8 @@ void work(int s){
 		case 5:if(direction!=2)direction=4;show();break;
 		case 6:grow();show();break;
 		case 7:errorFlag=0;gameQuit();break;
+		case 8:wallCrackFlag=!wallCrackFlag;break;
+		case 9:selfCrackFlag=!selfCrackFlag;break;
 	}
 }
 
@@ -274,7 +279,7 @@ point nextpoint(point p)
 	}
 	return p;
 }
-//return p.next.out of map
+//return p.next.outOfMap
 bool outOfMap(point p)
 {
 	return (direction==1&&p.x==0)||
