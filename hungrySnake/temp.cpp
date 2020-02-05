@@ -1,16 +1,21 @@
-#include <bits/stdc++.h>
+//#include <bits/stdc++.h>
+#include <iostream>
+#include <ctime>
+#include <deque>
+#include <string>
+#include <map>
+#include <vector>
 #include <conio.h>
 #include <windows.h>
 using namespace std;
 
 const int length =8,width=16,foodKind=6;
-typedef struct point
+struct point
 {
 	int x,y;
-	bool operator < (const point p)const{
-		return this->x<p.x||(this->x==p.x&&this->y<p.y);
-	}
-}point;
+	point(int a,int b):x(a),y(b){};
+	bool operator < (const point p)const{return this->x<p.x||(this->x==p.x&&this->y<p.y);}
+};
 
 /*
 front:head
@@ -83,7 +88,7 @@ int main()
     int tempstate=0;
     gameInit();
     while(1){
-		if(errorFlag==0)break;
+		//if(errorFlag==0)break;
 		Sleep(sleepTime);
 		tempstate=keyscan();
 		work(tempstate);
@@ -96,6 +101,7 @@ int main()
 void gameInit()
 {
     char c,i,j;
+	int tempx,tempy;
     srand(time(0));
 	hide();
 	system("mode con cols=16 lines=12");
@@ -110,13 +116,17 @@ void gameInit()
 	mmp.clear();
 	snake.clear();
 	food.clear();
+	spacemp.clear();
 	for(i=0;i<length;i++)for(j=0;j<width;j++){
 		spacemp.push_back({i,j});
 	}
 	l=0;
 	direction=0;
 	gameTime=0;
-	int tempx=length/2,tempy=width/2;
+	selfCrackFlag=1;
+	wallCrackFlag=1;
+	sleepTime=500;
+	tempx=length/2,tempy=width/2;
 	mp[tempx][tempy]=1;
     snake.push_back({tempx,tempy});
     cout<<"Push\nW/A/S/D\nto\nstart\n....\n";
@@ -161,21 +171,9 @@ void show()
 	printf("Timetick:%lld\nScore:%lld\nTimescale:%d",gameTime,l,sleepTime);
 }
 
-int keyscan(){
+int keyscan()
+{
 	int n=1;
-	/*
-	char c=_getch();
-	switch(c)
-	{
-		case 't':return 1;//timeTick++
-		case 'w':return 2;
-		case 'a':return 3;
-		case 's':return 4;
-		case 'd':return 5;
-		case 'e':return 6;//length++
-		case 'q':return 7;
-	}
-	*/
 	if(GetAsyncKeyState('W')||GetAsyncKeyState(VK_UP))n=2;
 	if(GetAsyncKeyState('A')||GetAsyncKeyState(VK_LEFT))n=3;
 	if(GetAsyncKeyState('S')||GetAsyncKeyState(VK_DOWN))n=4;
@@ -204,7 +202,8 @@ void cook()
 	food[2].push_back({tempx,tempy});
 }
 
-void work(int s){
+void work(int s)
+{
 	switch(s){
 		case 1:gameTime++;move();show();break;
 		case 2:if(direction!=3)direction=1;show();break;
@@ -223,10 +222,9 @@ void gameQuit()
     system("cls");
     cout<<"score:"<<l<<endl;
 	cout<<errorInfo[errorFlag];
-	//gameInit();
 	errorFlag=0;
     system("pause");
-	
+	gameInit();
 }
 
 void move()
@@ -287,12 +285,26 @@ bool outOfMap(point p)
 		(direction==2&&p.y==0)||
 		(direction==4&&p.y==width-1);
 }
-
+//hide console cursor
 void hide()
 {
-HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
-CONSOLE_CURSOR_INFO cci;
-GetConsoleCursorInfo(hOut, &cci);
-cci.bVisible = FALSE;
-SetConsoleCursorInfo(hOut, &cci);
+	HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
+	CONSOLE_CURSOR_INFO cci;
+	GetConsoleCursorInfo(hOut, &cci);
+	cci.bVisible = FALSE;
+	SetConsoleCursorInfo(hOut, &cci);
 }
+
+	/*
+	char c=_getch();
+	switch(c)
+	{
+		case 't':return 1;//timeTick++
+		case 'w':return 2;
+		case 'a':return 3;
+		case 's':return 4;
+		case 'd':return 5;
+		case 'e':return 6;//length++
+		case 'q':return 7;
+	}
+	*/
